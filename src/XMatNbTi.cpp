@@ -1,8 +1,20 @@
 #include <cmath>
+#include "XQuenchLogger.hpp"
 #include "XMatNbTi.hpp"
 
+using Quench::XQuenchLogger;
+
 XMatNbTi :: XMatNbTi()
+    : fIc5(14.2e+3),
+      fPar(1),
+      XMaterial()
 {}
+
+void XMatNbTi :: SetIcAt5Tesla(const double Ic)
+{
+  fIc5 = Ic;
+  QuenchInfo( "Ic at 5T and 4.2K: " << fIc5 );
+}
 
 double XMatNbTi :: GetCapacity()
 {
@@ -11,14 +23,15 @@ double XMatNbTi :: GetCapacity()
   return C;
 }
 
-
 double XMatNbTi :: GetCriticalI()
 {
   // wilson's book page 3
   // Jc ~ 2.4e+9 A/m2 at 4.2K, 5T
   // 2400 A/mm2 * 4.73mm * 15mm -> I0
-  const double I0 = 2400.*4.73*15.;    // normalized factor
-  double Ic = calcriticalcurrent(fTemp, fFld, I0);
+  //const double I0 = 2400.*4.73*15.;    // normalized factor
+  // comet stabilized cable
+  //const double I0 = 14.2e+3;    // normalized factor
+  double Ic = calcriticalcurrent(fTemp, fFld, fIc5);
 
   return Ic;
 }
@@ -34,12 +47,28 @@ double XMatNbTi :: GetCriticalT()
 double XMatNbTi :: GetSharingT(const double I)
 {
   const double Tc = GetCriticalT();
-  const double T0 = 4.5;
   const double Ic = GetCriticalI();
-  //const double Tcs = Tc + (Tc - T0) * (1 - I/Ic);
-  const double Tcs = Tc - (Tc - T0) * I / Ic;
+
+  if (Ic==0.)
+    return 0.;
+
+  const double Tcs = fTemp + (Tc - fTemp) * (1 - I/Ic);
+  //const double Tcs = Tc - (Tc - T0) * I / Ic;
 
   return Tcs;
+}
+
+
+double XMatNbTi :: GetSharingT(const double I, const double T)
+{
+  const double Tc = GetCriticalT();
+  const double Ic = GetCriticalI();
+
+  if (Ic==0.)
+    return 0.;
+
+  const double Tcs = T + (Tc - T) * (1 - I/Ic);
+  return Tcs; 
 }
 
 
@@ -86,6 +115,37 @@ double XMatNbTi :: calcapacity(const double T, const double B) const
 }
 
 
+void XMatNbTi :: SetIcParameter(const int par)
+{
+  fPar = par;
+  double Tc0, Bc20, C0, alpha, beta, gamma;
+  GetIcPar(Tc0, Bc20, C0, alpha, beta, gamma);
+
+  QuenchInfo( "Ic parameter -> Tc: " << Tc0 << " , Bc20: " << Bc20 << ", C0: " << C0 << 
+              " , alpha: " << alpha << " , beta: " << beta << " , gamma: " << gamma );
+}
+
+
+void XMatNbTi :: GetIcPar(double &Tc0, double &Bc20, double &C0, double &alpha, double &beta, double &gamma)
+{
+  // fitting equation from L. Bottura's paper
+  const int    n = 5;
+  const double T[n] = { 9.2,  8.5,  8.9,  9.2,  9.35};
+  const double B[n] = {14.5, 14.2, 14.4, 14.4, 14.25};
+  const double C[n] = {23.8, 28.6, 28.5, 37.7,  28.4};
+  const double a[n] = {0.57, 0.76, 0.64, 0.89,  0.80};
+  const double b[n] = {0.90, 0.85, 0.75, 1.10,  0.89};
+  const double g[n] = {1.90, 1.76, 2.30, 2.09,  1.87};
+
+  Tc0   = T[fPar];
+  Bc20  = B[fPar];
+  C0    = C[fPar];
+  alpha = a[fPar];
+  beta  = b[fPar];
+  gamma = g[fPar];
+}
+
+
 double XMatNbTi :: calcriticalcurrent(const double T, const double B, const double I0) const
 {
   // fitting equation from L. Bottura's paper
@@ -102,6 +162,9 @@ double XMatNbTi :: calcriticalcurrent(const double T, const double B, const doub
   const double t   = T / Tc0[m];
   const double Bc2 = Bc20[m] * (1 - pow(t,n));
   const double b   = B / Bc2;
+
+  if (b>1)
+    return 0.;
 
   // normalized critical current density
   double Ic = C0[m] * pow(b,alp[m]) * pow((1-b),beta[m]) * pow((1-pow(t,n)),gam[m]) / B;

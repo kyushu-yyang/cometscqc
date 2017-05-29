@@ -33,6 +33,25 @@ class XPostOutput:
                 node = mat.GetNode()
         return node, maxtemp
 
+    ## get minimum Tc
+    def GetMinTc(self):
+        minTc = 999.
+        node = 0
+        for mat in self._matf.GetCollection():
+            if mat.GetTc() < minTc:
+                minTc = mat.GetTc()
+                node = mat.GetNode()
+        return node, minTc
+
+    ## get minimum Tcs
+    def GetMinTcs(self):
+        minTcs = 999.
+        node = 0.
+        for mat in self._matf.GetCollection():
+            if mat.GetTcs() < minTcs and self._geof.GetCollect(mat.GetNode()).GetGeometry()==0:
+                minTcs = mat.GetTcs()
+                node = mat.GetNode()
+        return node, minTcs
 
     ## get minimum RRR
     def GetMinRRR(self, geom):
@@ -74,8 +93,17 @@ class XPostOutput:
         print " position: (%.2f, %.2f, %.2f)" %(z, p, r)
         print " min. RRR conductor: %.2f, strip: %.2f" %(self.GetMinRRR(0)[1], self.GetMinRRR(1)[1])
         print " min. strip kz: %.2f [W/m/K]" %(self.GetMinTherm(1, pt.kZ)[1])
+        print " min. Tc: %.4f [K]" %self.GetMinTc()[1]
+        print " min. Tcs: %.4f [K]" %self.GetMinTcs()[1]
         print "-------------------------------------"
         print ""
 
 
     ##
+    def getresult(self):
+        node, maxtemp = self.GetMaxTemp()
+        k = self.GetMinTherm(1, pt.kZ)[1]
+        Tc = self.GetMinTc()[1]
+        Tcs = self.GetMinTcs()[1]
+        res = "%.4f    %.4f     %.6f    %.6f" %(maxtemp, k, Tc, Tcs)
+        return res

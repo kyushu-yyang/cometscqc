@@ -37,7 +37,50 @@ cpdef enum MatType:
     kField
     kTemperature
     kDose
+    kTcs
+    kTc
+    kMargin
 
+
+## NbTi
+cdef double getIc(double T, double B):
+    if B==0.:
+        return 0.
+    cdef double I0 = 14200.
+    cdef double n = 1.7
+    cdef double Tc0 = 9.2
+    cdef double Bc20 = 14.5
+    cdef double C0 = 23.8
+    cdef double alpha = 0.57
+    cdef double beta = 0.9
+    cdef double gamma = 1.9
+    cdef double t = T / Tc0
+    cdef double Bc2 = Bc20 * (1-pow(t,n))
+    #cdef double Bc2 = Bc20 * (1-t**n)
+    cdef double b = B / Bc2
+    if (1.-b)<0.:
+        return 0.
+    cdef double Ic = I0 * C0 * pow(b,alpha) * pow((1-b),beta) * pow((1-pow(t,n)), gamma) / B
+    #cdef double Ic = I0 * C0 * b**alpha * (1-b)**beta * (1-t**n)**gamma / B
+    return Ic
+
+cdef double getTc(double B):
+    cdef double Tc0 = 9.2
+    cdef double Bc20 = 14.5
+    cdef double n = 1.7
+    #cdef double Tc = Tc0 * (1-B/Bc20)**(1/n)
+    cdef double Tc = Tc0 * pow(1-B/Bc20, 1./n)
+    return Tc
+
+cdef double getTcs(double I, double T, double B):
+    cdef double T0 = T
+    cdef double Ic = getIc(T, B)
+    cdef double Tc = getTc(B)
+    if Ic==0.:
+        return Tc
+    cdef double Tcs = T0 + (Tc-T0) * (1. - I/Ic)
+    #cdef double Tcs = Tc - (Tc-T0) * I / Ic
+    return Tcs
 
 ## class to contain the geometry info
 cdef class XGeoInfo:
@@ -153,6 +196,8 @@ cdef class XMatInfo:
     cdef double _C
     cdef double _B
     cdef double _dose
+    cdef double _Tcs
+    cdef double _Tc
     cdef np.ndarray _k
 
     ## constructor
@@ -163,6 +208,7 @@ cdef class XMatInfo:
         self._C    = 0.
         self._B    = 0.
         self._dose = 0.
+        self._Tcs  = 0.
         self._k    = np.array([0., 0., 0.])
 
     ## setup node id
@@ -172,6 +218,21 @@ cdef class XMatInfo:
     ## return the node id
     def GetNode(self):
         return self._id
+
+    ## setup the current sharing temperature
+    def SetTcs(self, double Tcs):
+        self._Tcs = Tcs
+
+    ## return the current sharing temperature
+    def GetTcs(self):
+        return self._Tcs
+
+    ## set and return the critical temperature
+    def SetTc(self, double Tc):
+        self._Tc = Tc
+
+    def GetTc(self):
+        return self._Tc
 
     ## setup temperature
     def SetTemperature(self, double T):
@@ -349,6 +410,7 @@ cdef class XMatFileLoad:
     ## fill the data into collection
     def fillcollect(self, data):
         cdef XMatInfo mat
+        cdef double I0 = 2700.
         for eachline in data:
             eachline.strip()
             item = eachline.split()
@@ -360,6 +422,8 @@ cdef class XMatFileLoad:
             mat.SetCapacity( float(item[4]) )
             mat.SetConductivity( float(item[5]), float(item[6]), float(item[7]) )
             mat.SetDose( float(item[8]) )
+            mat.SetTcs( getTcs(I0,float(item[1]),float(item[3])) )
+            mat.SetTc( getTc(float(item[3])) )
             self._mc = np.append(self._mc, mat)
 
 
@@ -464,6 +528,18 @@ cdef class XPost2dPlot:
                     self._dset = np.append( self._dset, matinfo[i].GetTemperature() )
                 elif opt==kDose:
                     self._dset = np.append( self._dset, matinfo[i].GetDose() )
+                elif opt==kTc:
+                    self._dset = np.append( self._dset, matinfo[i].GetTc() )
+                elif opt==kTcs:
+                    if matinfo[i].GetRRR()==0.:
+                        self._dset = np.append( self._dset, 4.5 )
+                    else:
+                        self._dset = np.append( self._dset, matinfo[i].GetTcs() )
+                elif opt==kMargin:
+                    if matinfo[i].GetRRR()==0.:
+                        self._dset = np.append( self._dset, 0. )
+                    else:
+                        self._dset = np.append( self._dset, matinfo[i].GetTc()-matinfo[i].GetTemperature() )
                 else:
                     raise
 
@@ -499,6 +575,15 @@ cdef class XPost2dPlot:
         elif info==kRRR:
             self._name = "RRR"
             self._save = "rrr"
+        elif info==kTcs:
+            self._name = "Current Sharing Temperature [K]"
+            self._save = "Tcs"
+        elif info==kTc:
+            self._name = "Critical Temperature [K]"
+            self._save = "Tc"
+        elif info==kMargin:
+            self._name = "Temperature Margin [K]"
+            self._save = "margin"
         else:
             print "Warning: there is no this kind of material property."
 

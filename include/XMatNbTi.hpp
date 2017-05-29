@@ -20,6 +20,18 @@ class XMatNbTi : public XMaterial
     /*! deconstructor */
     virtual ~XMatNbTi() {}
 
+    /*! setup the critical current at 5 Tesla, 4.2 K */
+    void SetIcAt5Tesla(const double Ic=14.2e+3);
+
+    /*! setup the Ic parameter */
+    void SetIcParameter(const int par=1);
+
+    /*! return the Ic parameter */
+    int GetIcParameter() const { return fPar; }
+    
+    /*! return the critical current at 5 Tesla, 4.2 K */
+    double GetIcAt5Tesla() const { return fIc5; }
+
     /*! @brief return the density */
     virtual double GetDensity() const { return 6538.; }
 
@@ -40,6 +52,10 @@ class XMatNbTi : public XMaterial
 
     /*! @brief return the current sharing temperature */
     virtual double GetSharingT(const double I);
+    virtual double GetSharingT(const double I, const double T);
+
+    /*! @brief return the fitting parameter */
+    void GetIcPar(double &Tc0, double &Bc20, double &C0, double &alpha, double &beta, double &gamma);
 
 
   protected:
@@ -47,11 +63,15 @@ class XMatNbTi : public XMaterial
     double calcapacity(const double T, const double B) const;
 
     /*! @brief calculate the critical current */
-    double calcriticalcurrent(const double T, const double B, const double I0=3000.) const;
+    double calcriticalcurrent(const double T, const double B, const double I0=14.2e+3) const;
 
     /*! @brief calculate the critical temperature */
     double calTc(const double B) const;
 
+
+  private:
+    double fIc5;
+    int    fPar;
 };
 
 #endif
