@@ -36,19 +36,20 @@ else ()
 endif ( NOT ${PYTHONLIBS_FOUND} )
 
 # find FindROOT.cmake
-set(CMAKE_MODULE_PATH $ENV{ROOTSYS}/etc/cmake)
+set(CMAKE_MODULE_PATH $ENV{ROOTSYS}/etc/root/cmake)
 find_package(ROOT REQUIRED)
 if ( NOT ROOT_FOUND )
   message(FATAL_ERROR "package is required ROOT, but not found it.")
 endif ( NOT ROOT_FOUND )
 
 # check the version of ROOT, currently the required version is 5.34
-if ( ${ROOT_VERSION} MATCHES "^5\\.34" )
-  message("-- ROOT version: ${ROOT_VERSION}")
-else ()
-  message("-- ROOT version: ${ROOT_VERSION}")
-  message(FATAL_ERROR "quench code is not supporting this version of ROOT.") 
-endif ()
+#if ( ${ROOT_VERSION} MATCHES "^5\\.34" )
+#  message("-- ROOT version: ${ROOT_VERSION}")
+#else ()
+#  message("-- ROOT version: ${ROOT_VERSION}")
+#  message(FATAL_ERROR "quench code is not supporting this version of ROOT.") 
+#endif ()
+message("-- ROOT version: ${ROOT_VERSION}")
 
 # append the root library
 set(libs)

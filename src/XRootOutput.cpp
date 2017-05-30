@@ -1,3 +1,4 @@
+#include <iostream>
 #include <TTree.h>
 #include <TFile.h>
 #include <TDirectory.h>
@@ -107,7 +108,8 @@ void XRootOutput :: Fill(const char* name, XProcessManager* man)
   int    id [3];
   double pos[3];
   double flx[3];
-  int    status;
+  double qcht;
+  //int    status;
 
   tree->Branch("node", &node, "node/I");
   tree->Branch("id", id, "id[3]/I");
@@ -121,7 +123,9 @@ void XRootOutput :: Fill(const char* name, XProcessManager* man)
   tree->Branch("R", &R, "R/D");
   tree->Branch("Q", &Q, "Q/D");
   tree->Branch("q", flx, "q[3]/D");
-  tree->Branch("status", status, "status/I");
+  tree->Branch("qch", &qcht, "qch/D");
+  //tree->Branch("status", status, "status/I");
+
 
   for (unsigned int i=0; i<man->GetEntries(); i++) {
 
@@ -150,7 +154,8 @@ void XRootOutput :: Fill(const char* name, XProcessManager* man)
     B = man->GetMaterialEntry(i)->GetField();
     R = man->GetMaterialEntry(i)->GetResistance();
     Q = man->GetMaterialEntry(i)->GetHeat();
-    status = man->GetMaterialEntry(i)->GetStatus();
+    qcht = man->GetMaterialEntry(i)->GetQuenchTime();
+    //status = man->GetMaterialEntry(i)->GetStatus();
 
     if ( id[0]>0 && id[0]<fMshZ+1 &&
          id[1]>0 && id[1]<fMshP+1 &&

@@ -19,7 +19,8 @@ XMaterialInfo :: XMaterialInfo()
       fDose(0.),
       fStep(0.1),
       fVolt(0.),
-      fStack(0.)
+      fStack(0.),
+      fQcht(-1.)
 {}
 
 

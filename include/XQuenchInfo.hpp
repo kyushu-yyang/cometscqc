@@ -135,6 +135,12 @@ class Quench::XMaterialInfo
     /// @brief return the time step
     double GetTimeStep() const { return fStep; }
 
+    /// @brief setup the quenched time
+    void SetQuenchTime(const double t) { fQcht = t; }
+
+    /// @brief return the quenched time
+    double GetQuenchTime() const { return fQcht; }
+
 
   private:
     std::array<double, 3> fHeat;
@@ -152,6 +158,7 @@ class Quench::XMaterialInfo
     double  fStep;
     double  fVolt;
     double  fStack;
+    double  fQcht;
 };
 
 
