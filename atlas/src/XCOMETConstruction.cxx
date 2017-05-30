@@ -55,6 +55,7 @@ void XCOMETConstruction ::ConstructAtlas()
   XProcessManager* pro = new XProcessManager();
   pro->SetCoilHandler(coil);
   pro->Initialize();
+  pro->SetNbTiIc(22.92e+3);
   
   // get magnetic field map
   fFld->SetTarget(name);
@@ -108,6 +109,12 @@ XCoilBase* XCOMETConstruction :: GetShell()
   shell->SetInsSize( 0., 0.5*mm );
 
   return dynamic_cast<XCoilBase*>(shell);
+}
+
+
+void XCOMETConstruction :: SetQuenchHeating(XThermalSolver* solve)
+{
+  solve->GetProcess()->GetMaterialEntry(solve->GetProcess()->Id(fHotZ,fHotPhi,fHotR))->SetHeat(6.4 * 15./0.0015);
 }
 
 
@@ -298,8 +305,11 @@ void XCOMETConstruction :: Run()
     }
 
     // set heat generation before quench
-    if ( quenched==false )
-      fCS->GetProcess()->GetMaterialEntry(fCS->GetProcess()->Id(fHotZ,fHotPhi,fHotR))->SetHeat(6400.*4);
+    //if ( quenched==false )
+    if ( time<=1. )
+      SetQuenchHeating(fCS);
+    //if ( quenched==false )
+    //  fCS->GetProcess()->GetMaterialEntry(fCS->GetProcess()->Id(fHotZ,fHotPhi,fHotR))->SetHeat(6400.*4);
 
     // 6. solve the thermal equation
     fCS->Solve(dt);
@@ -309,15 +319,15 @@ void XCOMETConstruction :: Run()
     if (dt>0.01) fDisplay=1;
 
     //if (cnt%fDisplay==0 && (int)(time*10000)%10==0) {
-    if ((int)(time*1000000)%10000==0) {
-      std::cout << "time: " << time << " [sec], step: " << dt << " [sec], Rtot: "
+    if ((int)(time*1000000)%5000==0) {
+      std::cout << std::setprecision(4) << "time: " << time << " [sec], step: " << dt << " [sec], Rtot: "
                 << CoilRes  << " [Ohm], Vtot: " << CoilRes*fCurr << " [V], I: "
                 << fCurr << " [A]";
       fCS->Print(fHotZ,fHotPhi,fHotR);
     }
 
     //if (cnt%(fDisplay*20)==0) {
-    if ((int)(time*1000000)%100000==0) {
+    if ((int)(time*1000000)%50000==0) {
       XRootOutput output( Form("./output/qchout%i.root",ocnt) );
       output.SetSubDirectory("CS");
       output.SetHeader(cnt, time, fCurr, CoilRes, CoilRes*fCurr);

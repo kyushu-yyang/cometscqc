@@ -54,6 +54,7 @@ class XCOMETConstruction : public XQuenchTransient
 
     /// @brief construct magnetic field
     void ConstructField(XFieldHandle* fld);
+    void SetQuenchHeating(XThermalSolver* solve);
     
 
   private:

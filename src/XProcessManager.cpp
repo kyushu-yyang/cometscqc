@@ -21,7 +21,8 @@ XProcessManager :: XProcessManager()
     : XMeshLoop(), 
       fCoil(NULL),
       fInsFactor(1.),
-      fName("")
+      fName(""),
+      fIc(14.14e+3)
 {}
 
 
@@ -538,24 +539,27 @@ void XProcessManager :: SetConductorMat(const int id, const XCoilBase* cdt, cons
   XMatNbTi      sc;
   XMatKapton    kap;
 
+  sc.SetIcAt5Tesla(fIc);
+
   cu.SetMaterialProperty(T, 50., B);     // copper RRR: 50
   al.SetMaterialProperty(T, RRR, B);
   sc.SetMaterialProperty(T, RRR, B);
   kap.SetMaterialProperty(T, RRR, B);
 
-  // get density
-  const double rho_Cu = cu.GetDensity();
-  const double rho_Al = al.GetDensity();
-  const double rho_Sc = sc.GetDensity();
-  const double rho_avg = 4000.;
-
-  fMC.at(id)->SetDensity( rho_avg );
-
   // get material ratio
   const double ratio_Al = fCoil->GetMaterialRatio(iAluminium);
   const double ratio_Cu = fCoil->GetMaterialRatio(iCopper);
   const double ratio_Sc = fCoil->GetMaterialRatio(iNbTi);
-  
+
+  // get density
+  const double rho_Cu = cu.GetDensity();
+  const double rho_Al = al.GetDensity();
+  const double rho_Sc = sc.GetDensity();
+  const double rho_avg = rho_Cu*ratio_Cu + rho_Al*ratio_Al + rho_Sc*ratio_Sc;
+  //const double rho_avg = 4000.;
+
+  fMC.at(id)->SetDensity( rho_avg );
+
   // calculate average capacity for conductor
   const double C_Al = ratio_Al * rho_Al * al.GetCapacity() / rho_avg;
   const double C_Cu = ratio_Cu * rho_Cu * cu.GetCapacity() / rho_avg;

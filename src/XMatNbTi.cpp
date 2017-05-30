@@ -6,14 +6,14 @@ using Quench::XQuenchLogger;
 
 XMatNbTi :: XMatNbTi()
     : fIc5(14.2e+3),
-      fPar(1),
+      fPar(3),
       XMaterial()
 {}
 
 void XMatNbTi :: SetIcAt5Tesla(const double Ic)
 {
   fIc5 = Ic;
-  QuenchInfo( "Ic at 5T and 4.2K: " << fIc5 );
+//  QuenchInfo( "Ic at 5T and 4.2K: " << fIc5 );
 }
 
 double XMatNbTi :: GetCapacity()
@@ -158,7 +158,7 @@ double XMatNbTi :: calcriticalcurrent(const double T, const double B, const doub
   const double beta[ni] = {0.90, 0.85, 0.75, 1.10,  0.89};
   const double gam [ni] = {1.90, 1.76, 2.30, 2.09,  1.87};
 
-  const int    m = 0;
+  const int    m = 3;
   const double t   = T / Tc0[m];
   const double Bc2 = Bc20[m] * (1 - pow(t,n));
   const double b   = B / Bc2;

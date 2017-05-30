@@ -32,6 +32,12 @@ class Quench::XProcessManager : public XMeshLoop
     /// @brief deconstructor
     virtual ~XProcessManager();
 
+    /// @brief setup the Ic at 4.2K, 5T
+    void SetNbTiIc(const double Ic) { fIc = Ic; }
+
+    /// @brief return the Ic at 4.2K, 5T
+    double GetNbTiIc() const { return fIc; }
+
     /// @brief setup the class contained coil information
     void SetCoilHandler(XCoilHandle* handler);
 
@@ -123,6 +129,7 @@ class Quench::XProcessManager : public XMeshLoop
 
   private:
     std::string fName;
+    double fIc;
 };
 
 #endif
