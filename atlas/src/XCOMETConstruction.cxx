@@ -41,7 +41,7 @@ void XCOMETConstruction ::ConstructAtlas()
   XCoilHandle* coil = new XCoilHandle();
   coil->SetName(name);
   coil->SetCoilSize(0., 2.*M_PI*r, 0.);
-  coil->SetMesh(800, 1, 3);
+  coil->SetMesh(800, 8, 3);
   coil->SetCoilLayers(1);
   coil->SetCoilTurns(1173);
   coil->SetMaterialRatio(14, 0.9, 1.);
@@ -114,7 +114,7 @@ XCoilBase* XCOMETConstruction :: GetShell()
 
 void XCOMETConstruction :: SetQuenchHeating(XThermalSolver* solve)
 {
-  solve->GetProcess()->GetMaterialEntry(solve->GetProcess()->Id(fHotZ,fHotPhi,fHotR))->SetHeat(6.4 * 15./0.0015);
+  solve->GetProcess()->GetMaterialEntry(solve->GetProcess()->Id(fHotZ,fHotPhi,fHotR))->SetHeat(6.4 * 10./0.0015);
 }
 
 
@@ -337,6 +337,8 @@ void XCOMETConstruction :: Run()
     }
 
     dt = fCS->FindTimeStep();
+    if (dt>0.5)
+      dt = 0.5;
     
     time += dt;
     cnt ++;
