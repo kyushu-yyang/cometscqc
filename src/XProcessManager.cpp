@@ -463,6 +463,7 @@ void XProcessManager :: InitPosition()
   double edge = fCoil->GetStripEdge();
   // approach z factor
   const double factor = fCoil->GetApproachZ();
+  QuenchError( XQuenchLogger::INFO, "factor along the z direction: " << factor );
   // length of cell
   lz = fCoil->GetCoilType(2)->GetTotalLength(iZ) * factor;
   lp = fCoil->GetCoilSize(iPhi) / fMshP;
@@ -606,7 +607,8 @@ void XProcessManager :: SetConductorMat(const int id, const XCoilBase* cdt, cons
 void XProcessManager :: SetStripMat(const int id, const XCoilBase* strip, const double T, const double RRR, const double B)
 {
   XMatAluminium al;
-  XMatKapton    kap;
+  //XMatKapton    kap;
+  XMatG10    kap;
 
   al.SetMaterialProperty(T, RRR, B);
   kap.SetMaterialProperty(T, RRR, B);
@@ -619,7 +621,8 @@ void XProcessManager :: SetStripMat(const int id, const XCoilBase* strip, const 
 
   // setup thermal conductivity
   const double k_Al  = al.GetConductivity();
-  const double k_ins = kap.GetConductivity() * fInsFactor;
+  //const double k_ins = kap.GetConductivity() * fInsFactor;
+  const double k_ins = kap.GetConductivity() * 10.;
 
   //const double lr_ins = 2. * fCoil->GetCoilParts(kStrip)->GetInsSize(iR);
   const double lr_ins = 2. * strip->GetInsSize(iR);
@@ -641,6 +644,7 @@ void XProcessManager :: SetShellMat(const int id, const XCoilBase* shell, const 
   //XMatKapton    kap;
   XMatAl5083 al;
   XMatG10 ins;
+  //XMatKapton ins;
 
   //al.SetMaterialProperty(T, RRR, B);
   al.SetTemperature(T);
@@ -655,6 +659,7 @@ void XProcessManager :: SetShellMat(const int id, const XCoilBase* shell, const 
   // setup thermal conductivity
   const double k_Al  = al.GetConductivity();
   const double k_ins = ins.GetConductivity();
+  //const double k_ins = ins.GetConductivity() * fInsFactor;
 
   const double lr_ins = shell->GetInsSize(iR);
   const double lr_Al  = shell->GetDimension(iR);

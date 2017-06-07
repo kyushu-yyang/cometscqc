@@ -15,7 +15,7 @@ int main(int argc, char** argv)
   XCOMETConstruction* comet = new XCOMETConstruction();
 
   try {
-    comet->SetTime(0.*sec, 60.*sec, 4.e-5*msec);
+    comet->SetTime(0.*sec, 50.*sec, 4.e-5*msec);
     //comet->SetDisplayStep(10);
     comet->SetCurrent(7600.*Amp);
     comet->SetHotSpot(800/2, 1, 2);

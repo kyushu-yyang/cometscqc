@@ -41,13 +41,13 @@ void XCOMETConstruction ::ConstructAtlas()
   XCoilHandle* coil = new XCoilHandle();
   coil->SetName(name);
   coil->SetCoilSize(0., 2.*M_PI*r, 0.);
-  coil->SetMesh(800, 8, 3);
+  coil->SetMesh(800, 1, 3);
   coil->SetCoilLayers(1);
   coil->SetCoilTurns(1173);
   coil->SetMaterialRatio(14, 0.9, 1.);
 
   // set coil structure
-  coil->AddLayer(1, kStrip, GetStrip(), kAdiabatic, 10.*cm);
+  coil->AddLayer(1, kStrip, GetStrip(), kAdiabatic, 0.*cm);
   coil->AddLayer(2, kConductor, GetConductor(), kAdiabatic, 0.*mm);
   coil->AddLayer(3, kShell, GetShell(), kAdiabatic, 0.*mm);
 
@@ -86,7 +86,7 @@ XCoilBase* XCOMETConstruction :: GetConductor()
 {
   XCoilConductor* cdt = new XCoilConductor();
   cdt->SetDimension( 4.25*mm, 30.*mm );
-  cdt->SetInsSize( 0.1*mm, 0.1*mm );
+  cdt->SetInsSize( 0.2*mm, 0.2*mm );
 
   return dynamic_cast<XCoilBase*>(cdt);
 }
@@ -95,8 +95,8 @@ XCoilBase* XCOMETConstruction :: GetConductor()
 XCoilBase* XCOMETConstruction :: GetStrip()
 {
   XCoilStrip* strip = new XCoilStrip();
-  strip->SetDimension( 4.25*mm+0.1*2*mm, 1.*mm );
-  strip->SetInsSize( 0., 0.5*mm );
+  strip->SetDimension( 4.25*mm+0.1*2*mm, 1.2*mm );
+  strip->SetInsSize( 0., 0.4*mm );
 
   return dynamic_cast<XCoilBase*>(strip);
 }
@@ -106,7 +106,7 @@ XCoilBase* XCOMETConstruction :: GetShell()
 {
   XCoilShell * shell = new XCoilShell();
   shell->SetDimension( 4.25*mm+0.15*2*mm, 12.*mm );
-  shell->SetInsSize( 0., 0.5*mm );
+  shell->SetInsSize( 0., 0.4*mm );
 
   return dynamic_cast<XCoilBase*>(shell);
 }
@@ -114,7 +114,11 @@ XCoilBase* XCOMETConstruction :: GetShell()
 
 void XCOMETConstruction :: SetQuenchHeating(XThermalSolver* solve)
 {
-  solve->GetProcess()->GetMaterialEntry(solve->GetProcess()->Id(fHotZ,fHotPhi,fHotR))->SetHeat(6.4 * 10./0.0015);
+  //const double A = 30e-3 * 4.25e-3 * (1173./400.);
+  //const double V = (1229.+45./2) * 2 * M_PI * 1e-3 * A;
+  //std::cout << 6.4*4./0.0015 << "    " << 6.4 / V << std::endl;
+  //solve->GetProcess()->GetMaterialEntry(solve->GetProcess()->Id(fHotZ,fHotPhi,fHotR))->SetHeat(6.4 * 3./0.0015);
+  solve->GetProcess()->GetMaterialEntry(solve->GetProcess()->Id(fHotZ,fHotPhi,fHotR))->SetHeat( 6.4*50/0.0015 );
 }
 
 
@@ -150,6 +154,8 @@ void XCOMETConstruction :: UpdateQuench(XThermalSolver* solve, const double time
   XMatCopper    cu;
   XMatAluminium al;
   XMatNbTi      sc;
+
+  sc.SetIcAt5Tesla(22.92e+3);
 
   double T     = 0.;
   double RRR   = 0.;
@@ -220,7 +226,7 @@ void XCOMETConstruction :: UpdateQuench(XThermalSolver* solve, const double time
       else if ( T>=Tcs && T<Tc ) {
         Rcs = R_avg * (T-Tcs) / (Tc-Tcs);
         solve->GetProcess()->GetMaterialEntry(i)->SetStatus(kTransition);
-        solve->GetProcess()->GetMaterialEntry(i)->SetResistance(Rcs*factor);
+        solve->GetProcess()->GetMaterialEntry(i)->SetResistance( Rcs*factor );
         solve->GetProcess()->GetMaterialEntry(i)->SetVoltage( factor*Rcs*fCurr );
         solve->GetProcess()->GetMaterialEntry(i)->SetHeat( pow(fCurr,2)*Rcs/Volume );
         if ( solve->GetProcess()->GetMaterialEntry(i)->GetQuenchTime()<0. )
@@ -264,6 +270,7 @@ void XCOMETConstruction :: Run()
   double dt = fdt;
   fCS->SetTimeInterval(dt);
   fCS->SetAccelerateFactor(1.);
+  fCS->GetProcess()->SetInsFactor(10.);
 
   double time = fTime0;
   int cnt = 0;
@@ -319,15 +326,16 @@ void XCOMETConstruction :: Run()
     if (dt>0.01) fDisplay=1;
 
     //if (cnt%fDisplay==0 && (int)(time*10000)%10==0) {
-    if ((int)(time*1000000)%5000==0) {
+    if (cnt%fDisplay==0 || dt>0.1) {
+    //if ((int)(time*1000000)%5000==0) {
       std::cout << std::setprecision(4) << "time: " << time << " [sec], step: " << dt << " [sec], Rtot: "
                 << CoilRes  << " [Ohm], Vtot: " << CoilRes*fCurr << " [V], I: "
                 << fCurr << " [A]";
       fCS->Print(fHotZ,fHotPhi,fHotR);
     }
 
-    //if (cnt%(fDisplay*20)==0) {
-    if ((int)(time*1000000)%50000==0) {
+    if (cnt%(fDisplay*50)==0 || dt>0.5) {
+    //if ((int)(time*1000000)%50000==0) {
       XRootOutput output( Form("./output/qchout%i.root",ocnt) );
       output.SetSubDirectory("CS");
       output.SetHeader(cnt, time, fCurr, CoilRes, CoilRes*fCurr);
@@ -337,8 +345,8 @@ void XCOMETConstruction :: Run()
     }
 
     dt = fCS->FindTimeStep();
-    if (dt>0.5)
-      dt = 0.5;
+    //if (dt>0.5)
+    //  dt = 0.5;
     
     time += dt;
     cnt ++;

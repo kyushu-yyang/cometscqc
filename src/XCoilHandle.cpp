@@ -142,7 +142,7 @@ void XCoilHandle :: SetStripEdge(const double length)
 
 double XCoilHandle :: GetApproachZ() const 
 {
-  const double app = fTurn / fMsh[iZ];
+  const double app = static_cast<double>(fTurn) / static_cast<double>(fMsh[iZ]);
   return app;
 }
 
