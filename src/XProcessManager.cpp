@@ -538,7 +538,8 @@ void XProcessManager :: SetConductorMat(const int id, const XCoilBase* cdt, cons
   XMatCopper    cu;
   XMatAluminium al;
   XMatNbTi      sc;
-  XMatKapton    kap;
+  //XMatKapton    kap;
+  XMatG10       kap;
 
   sc.SetIcAt5Tesla(fIc);
 
@@ -570,7 +571,8 @@ void XProcessManager :: SetConductorMat(const int id, const XCoilBase* cdt, cons
   fMC.at(id)->SetCapacity( C_avg );
 
   // calculate average thermal conductivity
-  const double k_Al = al.GetConductivity();
+  //const double k_Al = al.GetConductivity();
+  const double k_Al = al.hust_eq_therm(T,RRR,B);
   const double k_ins = kap.GetConductivity() * fInsFactor;
 
   //const double lz_ins = 2. * fCoil->GetCoilParts(kConductor)->GetInsSize(iZ);
@@ -620,11 +622,12 @@ void XProcessManager :: SetStripMat(const int id, const XCoilBase* strip, const 
   fMC.at(id)->SetCapacity( al.GetCapacity() );
 
   // setup thermal conductivity
-  const double k_Al  = al.GetConductivity();
-  //const double k_ins = kap.GetConductivity() * fInsFactor;
-  const double k_ins = kap.GetConductivity() * 10.;
+  //const double k_Al  = al.GetConductivity();
+  const double k_Al  = al.hust_eq_therm(T, RRR, B);
+  const double k_ins = kap.GetConductivity() * fInsFactor;
 
   //const double lr_ins = 2. * fCoil->GetCoilParts(kStrip)->GetInsSize(iR);
+  // both aluminium and insulation are using the total length
   const double lr_ins = 2. * strip->GetInsSize(iR);
   //const double lr_Al  = fCoil->GetCoilParts(kStrip)->GetDimension(iR);
   const double lr_Al  = strip->GetDimension(iR);

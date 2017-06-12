@@ -109,6 +109,7 @@ void XRootOutput :: Fill(const char* name, XProcessManager* man)
   double pos[3];
   double flx[3];
   double qcht;
+  double tcs;
   //int    status;
 
   tree->Branch("node", &node, "node/I");
@@ -124,6 +125,7 @@ void XRootOutput :: Fill(const char* name, XProcessManager* man)
   tree->Branch("Q", &Q, "Q/D");
   tree->Branch("q", flx, "q[3]/D");
   tree->Branch("qch", &qcht, "qch/D");
+  tree->Branch("Tcs", &tcs, "Tcs/D");
   //tree->Branch("status", status, "status/I");
 
 
@@ -155,6 +157,7 @@ void XRootOutput :: Fill(const char* name, XProcessManager* man)
     R = man->GetMaterialEntry(i)->GetResistance();
     Q = man->GetMaterialEntry(i)->GetHeat();
     qcht = man->GetMaterialEntry(i)->GetQuenchTime();
+    tcs = man->GetMaterialEntry(i)->GetTcs();
     //status = man->GetMaterialEntry(i)->GetStatus();
 
     if ( id[0]>0 && id[0]<fMshZ+1 &&

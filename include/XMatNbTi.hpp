@@ -21,7 +21,7 @@ class XMatNbTi : public XMaterial
     virtual ~XMatNbTi() {}
 
     /*! setup the critical current at 5 Tesla, 4.2 K */
-    void SetIcAt5Tesla(const double Ic=14.2e+3);
+    void SetIcAt5Tesla(const double Ic);
 
     /*! setup the Ic parameter */
     void SetIcParameter(const int par=1);

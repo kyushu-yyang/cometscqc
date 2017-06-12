@@ -20,7 +20,8 @@ XMaterialInfo :: XMaterialInfo()
       fStep(0.1),
       fVolt(0.),
       fStack(0.),
-      fQcht(-1.)
+      fQcht(-1.),
+      fTcs(-1.)
 {}
 
 

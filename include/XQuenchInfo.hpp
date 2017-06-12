@@ -141,6 +141,12 @@ class Quench::XMaterialInfo
     /// @brief return the quenched time
     double GetQuenchTime() const { return fQcht; }
 
+    /// @brief record the current sharing temperature
+    void SetTcs(const double Tcs) { fTcs = Tcs; }
+
+    /// @brief return the current sharing temperature
+    double GetTcs() const { return fTcs; }
+
 
   private:
     std::array<double, 3> fHeat;
@@ -159,6 +165,7 @@ class Quench::XMaterialInfo
     double  fVolt;
     double  fStack;
     double  fQcht;
+    double  fTcs;
 };
 
 

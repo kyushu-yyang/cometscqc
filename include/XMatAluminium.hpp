@@ -30,6 +30,13 @@ class XMatAluminium : public XMaterial
     /*! @brief return material heat capacity */
     virtual double GetCapacity();
 
+    /// @brief return the thermal conductivity calculated from Hust equation
+    double hust_eq_therm(const double T, double RRR, const double B) const;
+    double hust_eq_resist(const double T, double RRR, const double B) const;
+
+    /// @brief return the equivalent RRR from the kohler plot
+    double kohler_plot(const double RRR, const double B) const;
+
 
   protected:
     /*! @brief calculate electric resistivity */

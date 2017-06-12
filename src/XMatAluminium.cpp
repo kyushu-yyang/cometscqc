@@ -9,7 +9,7 @@
 using Quench::XQuenchLogger;
 
 XMatAluminium :: XMatAluminium()
-    : fRhoRT(2.75e-8)
+    : fRhoRT(2.7e-8)
 {}
 
 XMatAluminium :: ~XMatAluminium()
@@ -26,6 +26,16 @@ double XMatAluminium :: calresist() const
   par[4] = 64.0;
   par[5] = 4.428;
   par[6] = 1.2031;
+
+/*
+  par[0] = 0.09052e-16;
+  par[1] = 4.551;
+  par[2] = 5.173e+10;
+  par[3] = 1.26;
+  par[4] = 40.;
+  par[5] = 13.64;
+  par[6] = 0.7416;
+*/
 
   const double res = evalresist(par);
 
@@ -52,10 +62,12 @@ double XMatAluminium :: calmagres(double res) const
 {
   // fitting parameter for Al magnetoresistance
   const int nb = 5;
-  const double pb[nb] = {3.62857, 2.90419e-5, 3.79649e+6, 10975.9, 0.761609};
+  const double pb[nb] = {3.62857, -2.90419e-5, 3.79649e+6, 10975.9, 0.761609};
+  //const double pb[nb] = {1., 0.00177, 1.8, 1.6, 0.53};
 
-  const double h    = fFld * 10. * fRhoRT / res;
-  res += h*h*(pb[0] - pb[1]*h)*res / (pb[2] + pb[3]*h + pb[4]*h*h);
+  const double rhoRT = 2.75e-8;
+  const double h    = fFld*10. * rhoRT / res;
+  res = res + pow(h,2)*(pb[0]+pb[1]*h)*res / (pb[2]+pb[3]*h+pb[4]*pow(h,2));
 
   return res;
 }
@@ -86,6 +98,58 @@ double XMatAluminium :: GetCapacity()
   const double C = calcapacity(fTemp);
 
   return C;
+}
+
+double XMatAluminium :: kohler_plot(const double RRR, const double B) const
+{
+  // my fitting parameter
+  const double b[5] = {31.1133, 1.834e-4, 4.1053e+5, 6.3665e+3, 14.9814};
+  //const double b[5] = {1., 0.00177, 1.8, 1.6, 0.53};
+
+  const double h     = B * RRR;
+  const double Rb_R  = pow(h,2)*(b[0] - b[1]*h) / (b[2] + b[3]*h + b[4]*pow(h,2)) + 1.;
+
+  const double RRR_eq = RRR / Rb_R;
+  return RRR_eq;
+}
+
+double XMatAluminium :: hust_eq_resist(const double T, double RRR, const double B) const
+{
+  // hust's fitting parameter
+  const double p[7] = {0.9052e-17, 4.551, 5.173e+10, 1.26, 40., 13.64, 0.7416};
+
+  if (B>0.)
+    RRR = kohler_plot(RRR, B);
+
+  const double rhoRT = 2.70e-8;
+  const double rho0  = rhoRT / RRR;
+  const double rhoi  = p[0]*pow(T,p[1]) / (1 + p[0]*p[2]*pow(T,p[1]-p[3])*exp(-pow(p[4]/T,p[5])));
+  const double rhoi0 = p[6] * rhoi * rho0 / (rho0 + rhoi);
+  const double rho   = rho0 + rhoi + rhoi0;
+  
+  return rho;
+}
+
+double XMatAluminium :: hust_eq_therm(const double T, double RRR, const double B) const
+{
+  // hust's fitting parameter
+  // ref.: hust et al., national bureau of standards
+  const double p[7]  = {4.716e-8, 2.446, 623.6, -0.16, 130.9, 2.5, 0.8168};
+
+  if (B>0.)
+    RRR = kohler_plot(RRR, B);
+
+  const double rhoRT = 2.70e-8;
+  const double rho0  = rhoRT / RRR;
+  const double beta  = rho0 / Lwf;
+
+  const double W0  = beta / T;
+  const double Wc  = -0.0005*log(T/330.)*exp(-pow(-log(T/380.)/0.6,2)) - 0.0013*log(T/110.)*exp(-pow(log(T/94.)/0.5,2));
+  const double Wi  = p[0] * pow(T,p[1]) * pow(1 + p[0]*p[2]*pow(T,p[1]+p[3])*exp(-pow(p[4]/T,p[5])), -1.) + Wc;
+  const double Wi0 = p[6] * Wi * W0 / (Wi+W0);
+
+  const double k = 1. / (W0+Wi+Wi0);
+  return k;
 }
 
 

@@ -19,7 +19,6 @@ void XMatNbTi :: SetIcAt5Tesla(const double Ic)
 double XMatNbTi :: GetCapacity()
 {
   double C = calcapacity(fTemp, fFld);
-
   return C;
 }
 
@@ -30,12 +29,9 @@ double XMatNbTi :: GetCriticalI()
   // 2400 A/mm2 * 4.73mm * 15mm -> I0
   //const double I0 = 2400.*4.73*15.;    // normalized factor
   // comet stabilized cable
-  //const double I0 = 14.2e+3;    // normalized factor
   double Ic = calcriticalcurrent(fTemp, fFld, fIc5);
-
   return Ic;
 }
-
 
 double XMatNbTi :: GetCriticalT()
 {
@@ -76,19 +72,20 @@ double XMatNbTi :: calcapacity(const double T, const double B) const
 {
   // fitting parameter
   const int n = 5;
-  const double p1[n] = {0.0, 64.*B, 0.0, 49.1, 0.0};
-  const double p2[n] = {0.0, 928., 0.0, 16.24, 0.0};
-  const double p3[n] = {41383., -7846.1, 553.71, 11.9838, -0.2177};
-  const double p4[n] = {-1.53e+6, 83022., -716.3, 2.976, -0.00482};
-  const double p5[n] = {1.24e+6, 13706., -51.66, 0.09296, -6.29e-5};
-  const double p6[n] = {2.45e+6, 955.5, -0.257, 0., 0.};
+  const double p1[n] = {     0.0,   64.*B,    0.0,    49.1,      0.0};
+  const double p2[n] = {     0.0,    928.,    0.0,   16.24,      0.0};
+  const double p3[n] = {  41383., -7846.1, 553.71, 11.9838,  -0.2177};
+  const double p4[n] = {-1.53e+6,  83022., -716.3,   2.976, -0.00482};
+  const double p5[n] = { 1.24e+6,  13706., -51.66, 0.09296, -6.29e-5};
+  const double p6[n] = { 2.45e+6,   955.5, -0.257,      0.,       0.};
 
-  const double Tc  = 9.4;
+  //const double Tc  = 9.4;
+  const double Tc  = calTc(B);
   double C = 0.;
 
   if (T>0. && T<Tc) {
     for (int i=0; i<n; i++)
-      C += p1[i] * pow(T, i);    
+      C += p1[i] * pow(T, i); 
   }
   else if (T>=Tc && T<28.358) {
     for (int i=0; i<n; i++)
@@ -149,25 +146,23 @@ void XMatNbTi :: GetIcPar(double &Tc0, double &Bc20, double &C0, double &alpha, 
 double XMatNbTi :: calcriticalcurrent(const double T, const double B, const double I0) const
 {
   // fitting equation from L. Bottura's paper
-  const int ni = 5;
   const double n = 1.7;
-  const double Tc0 [ni] = { 9.2,  8.5,  8.9,  9.2,  9.35};
-  const double Bc20[ni] = {14.5, 14.2, 14.4, 14.4, 14.25};
-  const double C0  [ni] = {23.8, 28.6, 28.5, 37.7,  28.4};
-  const double alp [ni] = {0.57, 0.76, 0.64, 0.89,  0.80};
-  const double beta[ni] = {0.90, 0.85, 0.75, 1.10,  0.89};
-  const double gam [ni] = {1.90, 1.76, 2.30, 2.09,  1.87};
+  const double Tc0 [5] = { 9.2,  8.5,  8.9,  9.2,  9.35};
+  const double Bc20[5] = {14.5, 14.2, 14.4, 14.4, 14.25};
+  const double C0  [5] = {23.8, 28.6, 28.5, 37.7,  28.4};
+  const double alp [5] = {0.57, 0.76, 0.64, 0.89,  0.80};
+  const double beta[5] = {0.90, 0.85, 0.75, 1.10,  0.89};
+  const double gam [5] = {1.90, 1.76, 2.30, 2.09,  1.87};
 
-  const int    m = 3;
-  const double t   = T / Tc0[m];
-  const double Bc2 = Bc20[m] * (1 - pow(t,n));
+  const double t   = T / Tc0[fPar];
+  const double Bc2 = Bc20[fPar] * (1 - pow(t,n));
   const double b   = B / Bc2;
 
   if (b>1)
     return 0.;
 
   // normalized critical current density
-  double Ic = C0[m] * pow(b,alp[m]) * pow((1-b),beta[m]) * pow((1-pow(t,n)),gam[m]) / B;
+  double Ic = C0[fPar] * pow(b,alp[fPar]) * pow((1-b),beta[fPar]) * pow((1-pow(t,n)),gam[fPar]) / B;
   Ic *= I0;
 
   return Ic;
@@ -176,13 +171,11 @@ double XMatNbTi :: calcriticalcurrent(const double T, const double B, const doub
 
 double XMatNbTi :: calTc(const double B) const
 {
-  const int m = 5;
-  double Tc0 [m] = { 9.2,  8.5,  8.9,  9.2,  9.35};
-  double Bc20[m] = {14.5, 14.2, 14.4, 14.4, 14.25};
+  const double Tc0 [5] = { 9.2,  8.5,  8.9,  9.2,  9.35};
+  const double Bc20[5] = {14.5, 14.2, 14.4, 14.4, 14.25};
 
-  const int data = 0;
   const double n = 1.7;
-  double Tc = Tc0[data] * pow((1 - B/Bc20[data]), 1/n);
+  double Tc = Tc0[fPar] * pow((1 - B/Bc20[fPar]), 1/n);
 
   return Tc;
 }
