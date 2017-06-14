@@ -10,7 +10,7 @@ using Quench::XQuenchLogger;
 XMaterialInfo :: XMaterialInfo()
     : fField(0.), 
       fPreTemp(4.5),
-      fTemp(0.), 
+      fTemp(4.5), 
       fCapacity(1.),
       fRho(1.), 
       fRRR(100.),

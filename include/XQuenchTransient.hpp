@@ -78,7 +78,7 @@ class XQuenchTransient : public XTransientLoop
     int GetTotalConductor(XThermalSolver* solver);
 
     /// @brief count quenched conductor
-    int GetQuenchConductor(XThermalSolver* solver, QuenchStatus qch=kNormal);
+    int GetQuenchConductor(XThermalSolver* solver, QuenchStatus qch=kTransition);
 
     /// @brief set beginning of the run
     virtual void Begin();

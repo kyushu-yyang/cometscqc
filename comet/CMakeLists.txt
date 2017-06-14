@@ -8,14 +8,14 @@ project(SimCometMagQuench CXX)
 
 set(TARGET SimCometMagQuench.exe)
 
-set(QUENCH_ROOT $ENV{SOFTWARE}/CometQuenchCode-)
+set(QUENCH_ROOT $ENV{SOFTWARE}/cometscqc)
 
 ## setup compiler and c++11
 set(CMAKE_CXX_COMPILER g++)
 add_compile_options(-std=c++11)
 
 ## find ROOT
-set(CMAKE_MODULE_PATH $ENV{ROOTSYS}/etc/cmake)
+set(CMAKE_MODULE_PATH $ENV{ROOTSYS}/etc/root/cmake)
 find_package(ROOT REQUIRED)
 if ( NOT ROOT_FOUND )
   message(FATAL_ERROR "package is required ROOT, but not found it.")

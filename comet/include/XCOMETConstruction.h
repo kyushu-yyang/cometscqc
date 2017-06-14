@@ -42,7 +42,7 @@ class XCOMETConstruction : public XQuenchTransient
 
     /// @brief update the resistance of conductor
     /// @detail please use this function after SetMaterial() and the current decay calculation
-    void UpdateQuench(XThermalSolver* solve);
+    void UpdateQuench(XThermalSolver* solve, const double time);
 
     /// @brief begin of run
     virtual void Begin();
@@ -54,8 +54,8 @@ class XCOMETConstruction : public XQuenchTransient
     virtual void End();
 
     /// @brief connect two magnets
-    void ConnectMagnet(XThermalSolver* mag1, XThermalSolver* mag2, const double l);
-    void ConnectShell(XThermalSolver* mag1, XThermalSolver* mag2, const double l);
+    void ConnectMagnet(XThermalSolver* mag1, XThermalSolver* mag2, const double dt, const double l);
+    void ConnectShell(XThermalSolver* mag1, XThermalSolver* mag2, const int phi, const double dt, const double l);
 
 
   protected:

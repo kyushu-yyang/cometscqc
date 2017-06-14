@@ -103,7 +103,8 @@ double XMatAluminium :: GetCapacity()
 double XMatAluminium :: kohler_plot(const double RRR, const double B) const
 {
   // my fitting parameter
-  const double b[5] = {31.1133, 1.834e-4, 4.1053e+5, 6.3665e+3, 14.9814};
+  //const double b[5] = {31.1133, 1.834e-4, 4.1053e+5, 6.3665e+3, 14.9814};
+  const double b[5] = {8.7744e+2, 5.1726e-3, 1.1578e+7, 1.7954e+5, 4.225e+2};
   //const double b[5] = {1., 0.00177, 1.8, 1.6, 0.53};
 
   const double h     = B * RRR;

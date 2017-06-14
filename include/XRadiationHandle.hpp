@@ -86,6 +86,10 @@ class XRadiationHandle
     /// @brief return name of magnet
     std::string GetName() const { return fName; }
 
+    /// @brief check error
+    void SetPosError(const bool err=true) { fPosErr = err; }
+    void SetNegError(const bool err=true) { fNegErr = err; }
+ 
     /// @brief setup irradiation time
     void SetIrrTime(const double time);
 
@@ -126,6 +130,8 @@ class XRadiationHandle
     int fMshp;
     int fMshr;
     std::vector<XRadiationContainer*> fRC;
+    bool fNegErr;
+    bool fPosErr;
 };
 
 #endif

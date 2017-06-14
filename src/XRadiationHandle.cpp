@@ -27,7 +27,9 @@ XRadiationHandle :: XRadiationHandle()
       fIrrad(1.*year),
       fMshz(0),
       fMshp(0),
-      fMshr(0)
+      fMshr(0),
+      fPosErr(false),
+      fNegErr(false)
 {}
 
 XRadiationHandle :: XRadiationHandle(const std::string& filename)
@@ -35,7 +37,9 @@ XRadiationHandle :: XRadiationHandle(const std::string& filename)
       fIrrad(1.*year),
       fMshz(0),
       fMshp(0),
-      fMshr(0)
+      fMshr(0),
+      fPosErr(false),
+      fNegErr(false)
 {
   Load(filename);
 }
@@ -91,18 +95,27 @@ void XRadiationHandle :: Load(const std::string& filename)
   const double factor = fIrrad / (1*year);
 
   int    z, phi, r;
-  double dbuff[3];
+  double dbuff[6];
     
   XRadiationContainer* rad = NULL;
   QuenchError( XQuenchLogger::INFO, "loading file: " << filename );
 
   while (true) {
-    file >> z >> phi >> r >> dbuff[0] >> dbuff[1] >> dbuff[2];
+    file >> z >> phi >> r >> dbuff[0] >> dbuff[1] >> dbuff[2] >> dbuff[3] >> dbuff[4] >> dbuff[5];
     if (!file) break;
     rad = new XRadiationContainer;
     rad->SetId( z, phi, r );
     rad->SetNeutron( dbuff[0] * factor );
-    rad->SetDose( dbuff[1] );
+    rad->SetDose( dbuff[2] );
+
+    if (fPosErr==true && fNegErr==false) {
+      rad->SetNeutron( rad->GetNeutron() + dbuff[1]*factor );
+      rad->SetDose( rad->GetDose() + dbuff[3] );
+    }
+    else if (fPosErr==false && fNegErr==true) {
+      rad->SetNeutron( rad->GetNeutron() - dbuff[1]*factor );
+      rad->SetDose( rad->GetDose() - dbuff[3] );
+    }
     fRC.push_back( rad );
   }
 

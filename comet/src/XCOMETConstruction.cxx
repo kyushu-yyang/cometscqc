@@ -18,6 +18,10 @@
 #include "XQuenchLogger.hpp"
 #include "XCOMETConstruction.h"
 
+/*
+static double T_BUS  [3] = {0.,0.,0.};
+static double T_SHELL[3] = {0.,0.,0.};
+*/
 
 XCOMETConstruction :: XCOMETConstruction()
     : fDay(90*day),
@@ -30,6 +34,16 @@ XCOMETConstruction :: XCOMETConstruction()
 {
   if (!fFld)  fFld = new XFieldHandle();
   ConstructField(fFld);
+
+/*
+  T_BUS[0] = 4.5;
+  T_BUS[1] = 4.5;
+  T_BUS[2] = 4.5;
+
+  T_SHELL[0] = 4.5;
+  T_SHELL[1] = 4.5;
+  T_SHELL[2] = 4.5;
+*/
 }
 
 
@@ -128,7 +142,7 @@ void XCOMETConstruction ::ConstructCS1(const std::string& radfile, const char* t
   XCoilHandle* coil = new XCoilHandle();
   coil->SetName(name);
   coil->SetCoilSize(0., 2.*M_PI*r, 0.);
-  coil->SetMesh(45, 4, 19);
+  coil->SetMesh(90, 4, 19);
   coil->SetCoilLayers(9);
   coil->SetCoilTurns(270);
   coil->SetMaterialRatio(7.3, 1, 0.9);
@@ -199,7 +213,7 @@ void XCOMETConstruction ::ConstructMS1(const std::string& radfile, const char* t
   XCoilHandle* coil = new XCoilHandle();
   coil->SetName(name);
   coil->SetCoilSize(0., 2.*M_PI*r, 0.);
-  coil->SetMesh(45, 4, 11);
+  coil->SetMesh(57, 4, 11);
   coil->SetCoilLayers(5);
   coil->SetCoilTurns(285);
   coil->SetMaterialRatio(7.3, 1, 0.9);
@@ -262,7 +276,7 @@ void XCOMETConstruction ::ConstructMS2(const std::string& radfile, const char* t
   XCoilHandle* coil = new XCoilHandle();
   coil->SetName(name);
   coil->SetCoilSize(0., 2.*M_PI*r, 0.);
-  coil->SetMesh(50, 4, 15);
+  coil->SetMesh(70, 4, 15);
   coil->SetCoilLayers(7);
   coil->SetCoilTurns(140);
   coil->SetMaterialRatio(7.3, 1, 0.9);
@@ -319,16 +333,16 @@ void XCOMETConstruction :: ConstructField(XFieldHandle* fld)
 {
   fld->SetCurrent(2700.*Amp);
   fld->AddCoil( "CS0", 857.88*mm, 1038.12*mm, 672.*mm, 823.65*mm );
-  fld->SetMesh( "CS0", 35, 18 );
+  fld->SetMesh( "CS0", 35, 9 );
 
   fld->AddCoil( "CS1", -595.25*mm, 795.25*mm, 672.*mm, 823.65*mm );
-  fld->SetMesh( "CS1", 45, 18 );
+  fld->SetMesh( "CS1", 90, 9 );
 
   fld->AddCoil( "MS1", -2121.375*mm, -653.625*mm, 672.*mm, 756.25*mm );
-  fld->SetMesh( "MS1", 45, 10 );
+  fld->SetMesh( "MS1", 57, 5 );
 
   fld->AddCoil( "MS2", -2910.5*mm, -2189.5*mm, 672.*mm, 789.95*mm );
-  fld->SetMesh( "MS2", 50, 14 );
+  fld->SetMesh( "MS2", 70, 7 );
 }
 
 
@@ -389,7 +403,7 @@ double XCOMETConstruction :: GetCoilResistance(XThermalSolver* solve)
 }
 
 
-void XCOMETConstruction :: UpdateQuench(XThermalSolver* solve)
+void XCOMETConstruction :: UpdateQuench(XThermalSolver* solve, const double time)
 {
   XMatCopper    cu;
   XMatAluminium al;
@@ -446,8 +460,9 @@ void XCOMETConstruction :: UpdateQuench(XThermalSolver* solve)
       sc.SetMaterialProperty(T, RRR, B);
 
       // calculate Tcs and Tc
-      Tcs = sc.GetSharingT( fCurr );
       Tc  = sc.GetCriticalT();
+      //Tcs = sc.GetSharingT( fCurr );
+      Tcs = T + (Tc - T)*(1 - fCurr/sc.GetCriticalI());
 
       // calculate resistance
       R_Al  = al.GetResistivity() * l_Phi / A_Al;
@@ -467,6 +482,8 @@ void XCOMETConstruction :: UpdateQuench(XThermalSolver* solve)
         solve->GetProcess()->GetMaterialEntry(i)->SetResistance( Rcs*factor );
         solve->GetProcess()->GetMaterialEntry(i)->SetVoltage( Rcs*fCurr*factor );
         solve->GetProcess()->GetMaterialEntry(i)->SetHeat( pow(fCurr,2)*Rcs/Volume );
+        if ( solve->GetProcess()->GetMaterialEntry(i)->GetQuenchTime()<0. )
+          solve->GetProcess()->GetMaterialEntry(i)->SetQuenchTime(time);
       }
       else if ( T>=Tc ) {
         solve->GetProcess()->GetMaterialEntry(i)->SetStatus(kNormal);
@@ -529,6 +546,7 @@ void XCOMETConstruction :: Run()
                      GetTotalConductor(fMS1) + GetTotalConductor(fMS2);
   int qchcdt = 0;
 
+
   while (time<fTimef) {
     
     // 1. update material thermal conductivity, capacity
@@ -538,10 +556,10 @@ void XCOMETConstruction :: Run()
     fMS2->GetProcess()->SetMaterial();
 
     // 2. update material resistivity, voltage
-    UpdateQuench(fCS0); 
-    UpdateQuench(fCS1);
-    UpdateQuench(fMS1);
-    UpdateQuench(fMS2);
+    UpdateQuench(fCS0, time); 
+    UpdateQuench(fCS1, time);
+    UpdateQuench(fMS1, time);
+    UpdateQuench(fMS2, time);
 
     // 3. calculate coil resistance
     CoilRes = 0.;
@@ -589,13 +607,22 @@ void XCOMETConstruction :: Run()
     fMS2->Solve(dt);
     fMS2->SetBoundary();
 
-    ConnectShell(fCS0, fCS1, 5.*cm);
-    ConnectShell(fCS1, fMS1, 10.*cm);
-    ConnectShell(fMS1, fMS2, 10.*cm);
+    ConnectShell(fCS0, fCS1, 1, dt, 5.*cm);
+    ConnectShell(fCS0, fCS1, 2, dt, 5.*cm);
+    ConnectShell(fCS0, fCS1, 3, dt, 5.*cm);
+    ConnectShell(fCS0, fCS1, 4, dt, 5.*cm);
+    ConnectShell(fCS1, fMS1, 1, dt, 10.*cm);
+    ConnectShell(fCS1, fMS1, 2, dt, 10.*cm);
+    ConnectShell(fCS1, fMS1, 3, dt, 10.*cm);
+    ConnectShell(fCS1, fMS1, 4, dt, 10.*cm);
+    ConnectShell(fMS1, fMS2, 1, dt, 10.*cm);
+    ConnectShell(fMS1, fMS2, 2, dt, 10.*cm);
+    ConnectShell(fMS1, fMS2, 3, dt, 10.*cm);
+    ConnectShell(fMS1, fMS2, 4, dt, 10.*cm);
 
-    ConnectMagnet(fCS0, fCS1, 50.*cm);
-    ConnectMagnet(fCS1, fMS1, 50.*cm);
-    ConnectMagnet(fMS1, fMS2, 50.*cm);
+    ConnectMagnet(fCS0, fCS1, dt, 0.5*m);
+    ConnectMagnet(fCS1, fMS1, dt, 0.5*cm);
+    ConnectMagnet(fMS1, fMS2, dt, 0.5*cm);
 
     // count quenched conductors
     qchcdt = GetQuenchConductor(fCS0) + GetQuenchConductor(fCS1) +
@@ -652,68 +679,92 @@ void XCOMETConstruction :: Run()
 }
 
 
-void XCOMETConstruction :: ConnectShell(XThermalSolver* mag1, XThermalSolver* mag2, const double l)
+void XCOMETConstruction :: ConnectShell(XThermalSolver* mag1, XThermalSolver* mag2, const int phi, 
+                                        const double dt, const double l)
 {
-  const int mshz2 = mag2->GetProcess()->GetMesh(iZ);
-  const int mshr2 = mag2->GetProcess()->GetMesh(iR);
-  const int mshr1 = mag1->GetProcess()->GetMesh(iR);
+  /*
+     connection:
+              CS1                    CS0
+       |||||||||||||||||||||---------||||
+       ===================== ---     ====
+       =====================    \    ====
+       =====================     --- ====
+   */
+  const int mshz1 = mag2->GetProcess()->GetMesh(iZ);
+  const int mshr1 = mag2->GetProcess()->GetMesh(iR);
 
-  int id;
-  double temp, k, q;
-  // connect 1st shell
-  for (int i=1; i<5; i++) {
-    id = mag2->GetProcess()->Id(mshz2,i,mshr2);
-    temp = mag2->GetProcess()->GetMaterialEntry(id)->GetTemperature();
+  const int mshz2 = 1;
+  const int mshr2 = mag1->GetProcess()->GetMesh(iR);
 
-    k = mag2->GetProcess()->GetMaterialEntry(id)->GetConductivity(iPhi);
-    q = mag2->GetProcess()->GetMaterialEntry(id)->GetHeatFlux(iPhi);
-    temp += l * q / k;
-
-    id = mag1->GetProcess()->Id(0, i, mshr1);
-    mag1->GetProcess()->GetMaterialEntry(id)->SetTemperature(temp);
-  
-    // connect 2nd coil
-    id = mag1->GetProcess()->Id(1, i, mshr1);
-    temp = mag1->GetProcess()->GetMaterialEntry(id)->GetTemperature();
-
-    q = mag1->GetProcess()->GetMaterialEntry(id)->GetHeatFlux(iPhi);
-    temp += l * q / k;
-
-    id = mag2->GetProcess()->Id(mshz2+1, 0, mshr2);
-    mag2->GetProcess()->GetMaterialEntry(id)->SetTemperature(temp);
-  }
-}
-
-void XCOMETConstruction :: ConnectMagnet(XThermalSolver* mag1, XThermalSolver* mag2, const double l)
-{
-  // connect magnet1 with magnet2
-  //const int mshz1 = mag1->GetProcess()->GetMesh(iZ);
-  //const int mshr1 = mag1->GetProcess()->GetMesh(iR);
-
-  const int mshz2 = mag2->GetProcess()->GetMesh(iZ);
-  const int mshr2 = mag2->GetProcess()->GetMesh(iR);
+  int    id   = mag2->GetProcess()->Id(mshz1+1,phi,mshr1);
+  double preT = mag2->GetProcess()->GetMaterialEntry(id)->GetTemperature();
 
   // connect 1st coil
-  int id = mag2->GetProcess()->Id(mshz2,1,mshr2-1);
-  double temp = mag2->GetProcess()->GetMaterialEntry(id)->GetTemperature();
+  id  = mag2->GetProcess()->Id(mshz1,phi,mshr1);
+  double T1  = mag2->GetProcess()->GetMaterialEntry(id)->GetTemperature();
+  double k   = mag2->GetProcess()->GetMaterialEntry(id)->GetConductivity(iPhi);
+  double C   = mag2->GetProcess()->GetMaterialEntry(id)->GetCapacity();
+  double rho = mag2->GetProcess()->GetMaterialEntry(id)->GetDensity();
+  double x1  = mag2->GetProcess()->GetDimensionEntry(id)->GetCellSize(iPhi)/2.;
+  double alp = rho * C;
 
-  double k = mag2->GetProcess()->GetMaterialEntry(id)->GetConductivity(iPhi);
-  //const double l = 50.*cm;
-  double q = mag2->GetProcess()->GetMaterialEntry(id)->GetHeatFlux(iPhi);
-  temp += l * q / k;
+  id  = mag1->GetProcess()->Id(mshz2,phi,mshr2);
+  double T2  = mag1->GetProcess()->GetMaterialEntry(id)->GetTemperature();
+  double x2  = mag1->GetProcess()->GetDimensionEntry(id)->GetCellSize(iPhi)/2.;
 
-  id = mag1->GetProcess()->Id(1, 5, 2);
-  mag1->GetProcess()->GetMaterialEntry(id)->SetTemperature(temp);
-  
-  // connect 2nd coil
-  id = mag1->GetProcess()->Id(1, 4, 2);
-  temp = mag1->GetProcess()->GetMaterialEntry(id)->GetTemperature();
+  double gen1 = k * (T1-preT) / (x1/2.+l/2.) / l;
+  double gen2 = k * (T2-preT) / (x2/2.+l/2.) / l;
+  double T    = preT + (gen1 + gen2) * dt / alp; 
 
-  q = mag1->GetProcess()->GetMaterialEntry(id)->GetHeatFlux(iPhi);
-  temp += l * q / k;
+  id = mag2->GetProcess()->Id(mshz1+1,phi,mshr1);
+  mag2->GetProcess()->GetMaterialEntry(id)->SetTemperature(T);
 
-  id = mag2->GetProcess()->Id(mshz2, 0, mshr2-1);
-  mag2->GetProcess()->GetMaterialEntry(id)->SetTemperature(temp);
+  id = mag1->GetProcess()->Id(mshz2-1,phi,mshr2);
+  mag1->GetProcess()->GetMaterialEntry(id)->SetTemperature(T);
+}
+
+void XCOMETConstruction :: ConnectMagnet(XThermalSolver* mag1, XThermalSolver* mag2, 
+                                         const double dt, const double l)
+{
+  /*
+     connection:
+              CS1                    CS0
+       ===================== ---     ====
+       =====================    \    ====
+       =====================     --- ====
+   */
+
+  const int mshz1 = mag2->GetProcess()->GetMesh(iZ);
+  const int mshr1 = mag2->GetProcess()->GetMesh(iR)-1;
+
+  const int mshz2 = 1;
+  const int mshr2 = 2;
+
+  int    id   = mag2->GetProcess()->Id(mshz1,0,mshr1);
+  double preT = mag2->GetProcess()->GetMaterialEntry(id)->GetTemperature();
+
+  // connect 1st coil
+  id  = mag2->GetProcess()->Id(mshz1,1,mshr1);
+  double T1  = mag2->GetProcess()->GetMaterialEntry(id)->GetTemperature();
+  double k   = mag2->GetProcess()->GetMaterialEntry(id)->GetConductivity(iPhi);
+  double C   = mag2->GetProcess()->GetMaterialEntry(id)->GetCapacity();
+  double rho = mag2->GetProcess()->GetMaterialEntry(id)->GetDensity();
+  double x1  = mag2->GetProcess()->GetDimensionEntry(id)->GetCellSize(iPhi)/2.;
+  double alp = rho * C;
+
+  id = mag1->GetProcess()->Id(mshz2,4,mshr2);
+  double T2  = mag1->GetProcess()->GetMaterialEntry(id)->GetTemperature();
+  double x2  = mag1->GetProcess()->GetDimensionEntry(id)->GetCellSize(iPhi)/2.;
+
+  double gen1 = k * (T1-preT) / (x1/2.+l/2.) / l;
+  double gen2 = k * (T2-preT) / (x2/2.+l/2.) / l;
+  double T    = preT + (gen1 + gen2) * dt / alp; 
+
+  id = mag2->GetProcess()->Id(mshz1,0,mshr1);
+  mag2->GetProcess()->GetMaterialEntry(id)->SetTemperature(T);
+
+  id = mag1->GetProcess()->Id(mshz2,5,mshr2);
+  mag1->GetProcess()->GetMaterialEntry(id)->SetTemperature(T);
 }
 
 
