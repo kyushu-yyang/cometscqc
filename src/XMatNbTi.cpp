@@ -46,7 +46,7 @@ double XMatNbTi :: GetSharingT(const double I)
   const double Ic = GetCriticalI();
 
   if (Ic==0.)
-    return 0.;
+    return fTemp;
 
   const double Tcs = fTemp + (Tc - fTemp) * (1 - I/Ic);
   //const double Tcs = Tc - (Tc - T0) * I / Ic;
@@ -58,7 +58,7 @@ double XMatNbTi :: GetSharingT(const double I)
 double XMatNbTi :: GetSharingT(const double I, const double T)
 {
   const double Tc = GetCriticalT();
-  const double Ic = GetCriticalI();
+  const double Ic = calcriticalcurrent(T, fFld, fIc5);
 
   if (Ic==0.)
     return 0.;
@@ -158,7 +158,7 @@ double XMatNbTi :: calcriticalcurrent(const double T, const double B, const doub
   const double Bc2 = Bc20[fPar] * (1 - pow(t,n));
   const double b   = B / Bc2;
 
-  if (b>1)
+  if (b>1. || t>1.)
     return 0.;
 
   // normalized critical current density

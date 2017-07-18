@@ -35,7 +35,7 @@ class XMatAluminium : public XMaterial
     double hust_eq_resist(const double T, double RRR, const double B) const;
 
     /// @brief return the equivalent RRR from the kohler plot
-    double kohler_plot(const double RRR, const double B) const;
+    double kohler_plot(const double rhoB0, const double B) const;
 
 
   protected:

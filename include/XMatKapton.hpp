@@ -25,7 +25,8 @@ class XMatKapton : public XMaterial
     virtual double GetConductivity();
 
     /*! @brief return the density */
-    virtual double GetDensity() const { return 1420.; }
+    //virtual double GetDensity() const { return 1420.; }
+    virtual double GetDensity() const { return 1740.; }
 
     /*! @brief return the resistivity */
     virtual double GetResistivity() { return 1.; }

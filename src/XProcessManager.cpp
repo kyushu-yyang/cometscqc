@@ -538,8 +538,8 @@ void XProcessManager :: SetConductorMat(const int id, const XCoilBase* cdt, cons
   XMatCopper    cu;
   XMatAluminium al;
   XMatNbTi      sc;
-  //XMatKapton    kap;
-  XMatG10       kap;
+  XMatKapton    kap;
+  //XMatG10       kap;
 
   sc.SetIcAt5Tesla(fIc);
 
@@ -609,8 +609,8 @@ void XProcessManager :: SetConductorMat(const int id, const XCoilBase* cdt, cons
 void XProcessManager :: SetStripMat(const int id, const XCoilBase* strip, const double T, const double RRR, const double B)
 {
   XMatAluminium al;
-  //XMatKapton    kap;
-  XMatG10    kap;
+  XMatKapton    kap;
+  //XMatG10    kap;
 
   al.SetMaterialProperty(T, RRR, B);
   kap.SetMaterialProperty(T, RRR, B);
@@ -646,8 +646,8 @@ void XProcessManager :: SetShellMat(const int id, const XCoilBase* shell, const 
   //XMatAluminium al;
   //XMatKapton    kap;
   XMatAl5083 al;
-  XMatG10 ins;
-  //XMatKapton ins;
+  //XMatG10 ins;
+  XMatKapton ins;
 
   //al.SetMaterialProperty(T, RRR, B);
   al.SetTemperature(T);

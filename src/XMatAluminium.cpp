@@ -100,6 +100,7 @@ double XMatAluminium :: GetCapacity()
   return C;
 }
 
+/*
 double XMatAluminium :: kohler_plot(const double RRR, const double B) const
 {
   // my fitting parameter
@@ -107,11 +108,28 @@ double XMatAluminium :: kohler_plot(const double RRR, const double B) const
   const double b[5] = {8.7744e+2, 5.1726e-3, 1.1578e+7, 1.7954e+5, 4.225e+2};
   //const double b[5] = {1., 0.00177, 1.8, 1.6, 0.53};
 
+  
   const double h     = B * RRR;
   const double Rb_R  = pow(h,2)*(b[0] - b[1]*h) / (b[2] + b[3]*h + b[4]*pow(h,2)) + 1.;
 
   const double RRR_eq = RRR / Rb_R;
   return RRR_eq;
+}
+*/
+
+double XMatAluminium :: kohler_plot(const double rhoB0, const double B) const
+{
+  // my fitting parameter
+  //const double b[5] = {31.1133, 1.834e-4, 4.1053e+5, 6.3665e+3, 14.9814};
+  //const double b[5] = {8.7744e+2, 5.1726e-3, 1.1578e+7, 1.7954e+5, 4.225e+2};
+  const double b[5] = {903.5, -0.0001985, 2.928e+7, 1.451e+5, 417.};
+  //const double b[5] = {1., 0.00177, 1.8, 1.6, 0.53};
+
+  const double h    = B * 2.70e-8 / rhoB0;
+  const double drho = pow(h,2)*(b[0] - b[1]*h) / (b[2] + b[3]*h + b[4]*pow(h,2)) + 1.;
+
+  const double rhoB = rhoB0 * drho;
+  return rhoB;
 }
 
 double XMatAluminium :: hust_eq_resist(const double T, double RRR, const double B) const
@@ -119,15 +137,15 @@ double XMatAluminium :: hust_eq_resist(const double T, double RRR, const double 
   // hust's fitting parameter
   const double p[7] = {0.9052e-17, 4.551, 5.173e+10, 1.26, 40., 13.64, 0.7416};
 
-  if (B>0.)
-    RRR = kohler_plot(RRR, B);
-
   const double rhoRT = 2.70e-8;
   const double rho0  = rhoRT / RRR;
   const double rhoi  = p[0]*pow(T,p[1]) / (1 + p[0]*p[2]*pow(T,p[1]-p[3])*exp(-pow(p[4]/T,p[5])));
   const double rhoi0 = p[6] * rhoi * rho0 / (rho0 + rhoi);
-  const double rho   = rho0 + rhoi + rhoi0;
-  
+  double rho   = rho0 + rhoi + rhoi0;
+
+  if (B>0.)
+    rho = kohler_plot(rho, B);
+
   return rho;
 }
 
@@ -137,8 +155,11 @@ double XMatAluminium :: hust_eq_therm(const double T, double RRR, const double B
   // ref.: hust et al., national bureau of standards
   const double p[7]  = {4.716e-8, 2.446, 623.6, -0.16, 130.9, 2.5, 0.8168};
 
+  //if (B>0.)
+  //  RRR = kohler_plot(RRR, B);
+  double scale = 1.;
   if (B>0.)
-    RRR = kohler_plot(RRR, B);
+    scale = hust_eq_resist(T,RRR,0.) / hust_eq_resist(T,RRR,B);
 
   const double rhoRT = 2.70e-8;
   const double rho0  = rhoRT / RRR;
@@ -149,7 +170,7 @@ double XMatAluminium :: hust_eq_therm(const double T, double RRR, const double B
   const double Wi  = p[0] * pow(T,p[1]) * pow(1 + p[0]*p[2]*pow(T,p[1]+p[3])*exp(-pow(p[4]/T,p[5])), -1.) + Wc;
   const double Wi0 = p[6] * Wi * W0 / (Wi+W0);
 
-  const double k = 1. / (W0+Wi+Wi0);
+  const double k = scale * 1. / (W0+Wi+Wi0);
   return k;
 }
 

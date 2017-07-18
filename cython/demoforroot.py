@@ -2,11 +2,14 @@
 
 import os
 import sys
-sys.path.append("/home/yeyang/Documents/software/CometQuenchCode-/cython")
+sys.path.append("/Users/yangye/Documents/Software/cometscqc/cython/cython")
 import matplotlib.pyplot as plt
 import XPostRootLoad as pt
 import XPostOutput
 import XRootFiles
+
+plt.style.use("classic")
+plt.rcParams["font.family"] = "Times New Roman"
 
 def usage():
     print "usage:"

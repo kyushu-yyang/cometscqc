@@ -332,6 +332,20 @@ void XThermalSolver :: SetConductorPhi() {
         id_edge = fProcess->Id(i,1,k);
         Connect(id_edge, id_bdy);
       }
+
+      if ( i==1 && fProcess->GetDimensionEntry(id_bdy)->GetGeometry()==kConductor ) {
+        id_bdy  = fProcess->Id(i, 0, k);
+        id_edge = fProcess->Id(i, 1, k);
+        T = fProcess->GetMaterialEntry(id_edge)->GetTemperature();
+        fProcess->GetMaterialEntry(id_bdy)->SetTemperature(T);
+      }
+
+      if ( i==fMshZ && fProcess->GetDimensionEntry(id_bdy)->GetGeometry()==kConductor ) {
+        id_bdy  = fProcess->Id(i, fMshP+1, k);
+        id_edge = fProcess->Id(i, fMshP, k);
+        T = fProcess->GetMaterialEntry(id_edge)->GetTemperature();
+        fProcess->GetMaterialEntry(id_bdy)->SetTemperature(T);
+      }
     }
   }
 }
@@ -433,7 +447,7 @@ void XThermalSolver :: Print(const int z, const int phi, const int r)
     std::cout << " T: "     << Temp << " [K], " 
               << " dT/dt: " << (Temp-preTemp)/step << " [K/sec] ";
 
-    QuenchInfo(" T: "     << Temp << " [K], " << " dT/dt: " << (Temp-preTemp)/step << " [K/sec] ");
+    //QuenchInfo(" T: "     << Temp << " [K], " << " dT/dt: " << (Temp-preTemp)/step << " [K/sec] ");
 
     if (i==fPrint.size()-1) {
       std::cout << "\n";
